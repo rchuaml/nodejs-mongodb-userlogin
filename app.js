@@ -1,9 +1,13 @@
 require('dotenv').config();
 require('./database-connection/db');
+const cors = require('cors')
 const express = require('express');
 const bodyparser = require('body-parser');
 
 const app = express();
+
+// Cross-origin resource sharing
+app.use(cors());
 
 // parse application/x-www-form-urlencoded
 app.use(bodyparser.urlencoded({ extended: false }));

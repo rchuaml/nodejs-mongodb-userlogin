@@ -32,7 +32,7 @@ class UserService {
                         });
                 }
                 else {
-                    return Promise.reject({ 'error': 'email already used' });
+                    return Promise.reject({ message: 'email already used' });
                 }
             })
         return promise;
@@ -45,7 +45,7 @@ class UserService {
             .exec()
             .then((doc) => {
                 if (!doc) {
-                    return Promise.reject({ error: 'account not exist' });
+                    return Promise.reject({ message: 'account not exist' });
                 }
 
                 return bcrypt.compare(plaintextPassword, doc.password)
@@ -84,6 +84,11 @@ class UserService {
         return query.exec();
     }
 
+    static AuthCheck(uId) {
+        var query = UserModel.findById(uId).select('email firstName lastName');
+        return query.exec();
+    }
+
     // Update
     static UpdateUser(userId, email, plaintextPassword, firstName, lastName, phoneNumber, dateOfBirth, profileImage) {
         var promise = bcrypt.hash(plaintextPassword, saltRounds)
@@ -105,11 +110,44 @@ class UserService {
         return promise;
     }
 
+    static ChangePassword(uId, oldPassword, newPassword) {
+        return UserModel.findById(uId)
+            .select('_id password')
+            .exec()
+            .then(doc => {
+                return bcrypt.compare(oldPassword, doc.password)
+                    .then(onfulfilled => {
+                        if (!onfulfilled) {
+                            return Promise.reject({ message: 'old password not matched' });
+                        }
+
+                        let hashPromise = bcrypt.hash(newPassword, saltRounds)
+                            .then(newHashedPassword => {
+                                // Operate the doc object directly (modify only certain fields)
+                                doc.password = newHashedPassword;
+                                return doc.save()
+                                    .then(saveResult => {
+                                        return Promise.resolve({ message: "change password succeeded" })
+                                    })
+                                    .catch(saveError => {
+                                        return Promise.reject({ message: 'change password failed', error: saveError });
+                                    });
+                            })
+                        return hashPromise;
+                    })
+            })
+    }
+
     // Delete
     static DeleteUser(userId) {
         var query = UserModel.deleteOne({ '_id': userId });
         var promise = query.exec();
         return promise;
+    }
+
+    // Get profile image
+    static GetProfileImage(uId) {
+        return UserModel.findById(uId).exec();
     }
 }
 

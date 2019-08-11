@@ -24,12 +24,21 @@ router.get('/profile', auth, userController.access_profile);
 // Update profile (need authentication)
 router.put('/profile', auth, upload.single('profileImage'), userController.update_profile);
 
+// Change password
+router.put('/security', auth, userController.change_password);
+
+// Check the jwt from client
+router.get('/auth', auth, userController.auth_check);
+
 // TODO: clear the code segment when release
 router.get('/test', (req, res) => {
     return res.status(200).json({
-        foo: 'bar'
+        foo: 'bar',
     });
 });
+
+// TODO: clear the code segment when release
+router.get('/image/:uId', userController.get_profile_img);
 
 // Exports router
 module.exports = router;

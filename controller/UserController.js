@@ -35,7 +35,8 @@ module.exports.user_login = function (req, res) {
             return res.status(200).json(context);
         })
         .catch((reason) => {
-            return res.status(500).json(reason);
+            // 401 Unauthorized error
+            return res.status(401).json(reason);
         });
 }
 
@@ -96,7 +97,7 @@ module.exports.access_profile = function (req, res) {
                         lastName: 'String',
                         phoneNumber: 'Number',
                         dateOfBirth: 'String',
-                        profileImage: 'Buffer'
+                        profileImage: 'String(base64)'
                     },
                     description: 'UPDATE_PROFILE'
                 }
@@ -106,6 +107,20 @@ module.exports.access_profile = function (req, res) {
         .catch(err => { return res.status(500).json(err); })
 }
 
+// Check JWT from client
+module.exports.auth_check = function (req, res) {
+    // decoded by auth middleware
+    var uId = req.userPayload.userId;
+    UserService.AuthCheck(uId)
+        .then(doc => {
+            return res.status(200).json({ userInfo: doc });
+        })
+        .catch(err => {
+            return res.status(401).json({ message: 'Authentication failed' });
+        });
+}
+
+
 // Update profile
 module.exports.update_profile = function (req, res) {
     if (!req.body) {
@@ -113,9 +128,20 @@ module.exports.update_profile = function (req, res) {
     }
 
     // Convert to buffer format
-    var imgBuffer;
-    if (req.file != null) {
-        imgBuffer = fs.readFileSync(req.file.path);
+    var imgDataURL;
+    if (req.file != null && req.file.mimetype != null) {
+        // Multipurpose Internet Mail Extensions or MIME type
+        // Indicates the nature and format of a document
+        const mimeType = req.file.mimetype;
+        if (mimeType != 'image/jpeg' && mimeType != 'image/png') {
+            console.log(req.file);
+            console.log(mimeType);
+            return res.status(400).json({ message: 'incorrect file format' });
+        }
+        imgDataURL = fs.readFileSync(req.file.path).toString('base64');
+        imgDataURL = `data:${mimeType};base64,${imgDataURL}`;
+    } else {
+        console.log('no file');
     }
 
     // Payload from JWT
@@ -130,7 +156,7 @@ module.exports.update_profile = function (req, res) {
     const dateOfBirth = req.body.dateOfBirth;
 
     // Call service
-    UserService.UpdateUser(uId, email, password, firstName, lastName, phoneNumber, dateOfBirth, imgBuffer)
+    UserService.UpdateUser(uId, email, password, firstName, lastName, phoneNumber, dateOfBirth, imgDataURL)
         .then((result) => {
             const context = {
                 message: 'update user succeeded',
@@ -159,7 +185,6 @@ module.exports.update_profile = function (req, res) {
             return res.status(200).json(context);
         })
         .catch((reason) => {
-
             if (req.file && req.file.path) {
                 try {
                     // Remove file
@@ -170,7 +195,40 @@ module.exports.update_profile = function (req, res) {
                 }
             }
 
-            return res.status(500).json(reason);
+            return res.status(500).json({ message: 'update profile failed', error: reason });
         });
 }
 
+module.exports.change_password = function (req, res) {
+    if (!req.body) {
+        return res.status(400).json({});
+    }
+
+    // get jwt data
+    const uId = req.userPayload.userId;
+
+    const password_old = req.body.password_old;
+    const password_new = req.body.password_new;
+
+    // Call service
+    UserService.ChangePassword(uId, password_old, password_new)
+        .then(result => {
+            console.log(result);
+            return res.status(200).json(result);
+        })
+        .catch(err => {
+            console.log(err);
+            return res.status(500).json(err);
+        })
+}
+
+// Retrieve image
+module.exports.get_profile_img = function (req, res) {
+    UserService.GetProfileImage(req.params.uId)
+        .then(result => {
+            return res.status(200).json({ profileImage: result.profileImage });
+        })
+        .catch(reason => {
+            return res.status(500).json({});
+        });
+}
