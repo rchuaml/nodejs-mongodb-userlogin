@@ -32,7 +32,7 @@ class UserService {
                         });
                 }
                 else {
-                    return Promise.reject({ message: 'email already used' });
+                    return Promise.reject({ message: 'This email has been used' });
                 }
             })
         return promise;
@@ -45,13 +45,13 @@ class UserService {
             .exec()
             .then((doc) => {
                 if (!doc) {
-                    return Promise.reject({ message: 'account not exist' });
+                    return Promise.reject({ message: 'Account not exist' });
                 }
 
                 return bcrypt.compare(plaintextPassword, doc.password)
                     .then((comparedResult) => {
                         if (!comparedResult) {
-                            return Promise.reject({ message: 'wrong password' });
+                            return Promise.reject({ message: 'Wrong password' });
                         }
 
                         try {
@@ -71,7 +71,7 @@ class UserService {
                             return Promise.resolve(context);
                         }
                         catch (signErr) {
-                            return Promise.reject({ message: 'jwt sign error', signErr: signErr });
+                            return Promise.reject({ message: 'Sign JWT error', signErr: signErr });
                         }
                     })
             });
@@ -90,26 +90,41 @@ class UserService {
     }
 
     // Update
-    static UpdateUser(userId, email, plaintextPassword, firstName, lastName, phoneNumber, dateOfBirth, profileImage) {
-        var promise = bcrypt.hash(plaintextPassword, saltRounds)
-            .then((hashedPassword) => {
-                // Update to database
-                var query = UserModel.updateOne({ '_id': userId }, {
-                    email: email,
-                    password: hashedPassword,
-                    firstName: firstName,
-                    lastName: lastName,
-                    phoneNumber: phoneNumber,
-                    dateOfBirth: dateOfBirth,
-                    profileImage: profileImage
-                });
-                return query.exec();
-            }).catch((err) => {
-                return Promise.reject(err);
+    static UpdateUser(userId, firstName, lastName, phoneNumber, dateOfBirth, profileImage) {
+
+        var promise = UserModel.findById(userId)
+            .select('email firstName lastName phoneNumber dateOfBirth profileImage')
+            .exec()
+            .then((doc) => {
+                doc.firstName = firstName;
+                doc.lastName = lastName;
+                doc.phoneNumber = phoneNumber;
+                doc.dateOfBirth = dateOfBirth;
+                doc.profileImage = profileImage;
+                return doc.save();
             });
         return promise;
+
+        // var promise = bcrypt.hash(plaintextPassword, saltRounds)
+        //     .then((hashedPassword) => {
+        //         // Update to database
+        //         var query = UserModel.updateOne({ '_id': userId }, {
+        //             email: email,
+        //             password: hashedPassword,
+        //             firstName: firstName,
+        //             lastName: lastName,
+        //             phoneNumber: phoneNumber,
+        //             dateOfBirth: dateOfBirth,
+        //             profileImage: profileImage
+        //         });
+        //         return query.exec();
+        //     }).catch((err) => {
+        //         return Promise.reject(err);
+        //     });
+        // return promise;
     }
 
+    // Change account password
     static ChangePassword(uId, oldPassword, newPassword) {
         return UserModel.findById(uId)
             .select('_id password')
@@ -118,7 +133,7 @@ class UserService {
                 return bcrypt.compare(oldPassword, doc.password)
                     .then(onfulfilled => {
                         if (!onfulfilled) {
-                            return Promise.reject({ message: 'old password not matched' });
+                            return Promise.reject({ message: 'Original password is wrong' });
                         }
 
                         let hashPromise = bcrypt.hash(newPassword, saltRounds)
@@ -127,10 +142,10 @@ class UserService {
                                 doc.password = newHashedPassword;
                                 return doc.save()
                                     .then(saveResult => {
-                                        return Promise.resolve({ message: "change password succeeded" })
+                                        return Promise.resolve({ message: "Change password succeeded" })
                                     })
                                     .catch(saveError => {
-                                        return Promise.reject({ message: 'change password failed', error: saveError });
+                                        return Promise.reject({ message: 'Change password failed', error: saveError });
                                     });
                             })
                         return hashPromise;
@@ -143,11 +158,6 @@ class UserService {
         var query = UserModel.deleteOne({ '_id': userId });
         var promise = query.exec();
         return promise;
-    }
-
-    // Get profile image
-    static GetProfileImage(uId) {
-        return UserModel.findById(uId).exec();
     }
 }
 

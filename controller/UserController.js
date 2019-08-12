@@ -92,12 +92,11 @@ module.exports.access_profile = function (req, res) {
                     contentType: 'multipart/form-data',
                     url: `${baseURL}/profile`,
                     body: {
-                        password: 'String',
                         firstName: 'String',
                         lastName: 'String',
-                        phoneNumber: 'Number',
-                        dateOfBirth: 'String',
-                        profileImage: 'String(base64)'
+                        phoneNumber: 'Number (8 digits)',
+                        dateOfBirth: 'String (yyyy-mm-dd)',
+                        profileImage: 'String(base64 jpeg or png image)'
                     },
                     description: 'UPDATE_PROFILE'
                 }
@@ -120,7 +119,6 @@ module.exports.auth_check = function (req, res) {
         });
 }
 
-
 // Update profile
 module.exports.update_profile = function (req, res) {
     if (!req.body) {
@@ -134,54 +132,48 @@ module.exports.update_profile = function (req, res) {
         // Indicates the nature and format of a document
         const mimeType = req.file.mimetype;
         if (mimeType != 'image/jpeg' && mimeType != 'image/png') {
-            console.log(req.file);
-            console.log(mimeType);
-            return res.status(400).json({ message: 'incorrect file format' });
+            return res.status(400).json({ message: 'Incorrect file format' });
         }
         imgDataURL = fs.readFileSync(req.file.path).toString('base64');
         imgDataURL = `data:${mimeType};base64,${imgDataURL}`;
     } else {
-        console.log('no file');
+        // console.log('no file');
     }
 
     // Payload from JWT
     const uId = req.userPayload.userId;
-    const email = req.userPayload.email;
 
     // User info from body
-    const password = req.body.password;
     const firstName = req.body.firstName;
     const lastName = req.body.lastName;
     const phoneNumber = req.body.phoneNumber;
     const dateOfBirth = req.body.dateOfBirth;
 
     // Call service
-    UserService.UpdateUser(uId, email, password, firstName, lastName, phoneNumber, dateOfBirth, imgDataURL)
+    UserService.UpdateUser(uId, firstName, lastName, phoneNumber, dateOfBirth, imgDataURL)
         .then((result) => {
             const context = {
                 message: 'update user succeeded',
                 matched: result.n,
                 modified: result.nModified,
                 userInfo: {
-                    firstName: firstName,
-                    lastName: lastName
+                    email: result.email,
+                    firstName: result.firstName,
+                    lastName: result.lastName
                 },
                 request: {
                     type: 'GET',
                     url: `${baseURL}/profile`
                 }
             }
-
+            // Remove file
             if (req.file && req.file.path) {
                 try {
-                    // Remove file
                     fs.unlinkSync(req.file.path);
-
                 } catch (fsErr) {
                     console.error(fsErr);
                 }
             }
-
             return res.status(200).json(context);
         })
         .catch((reason) => {
@@ -195,7 +187,7 @@ module.exports.update_profile = function (req, res) {
                 }
             }
 
-            return res.status(500).json({ message: 'update profile failed', error: reason });
+            return res.status(500).json({ message: 'Update profile failed', error: reason });
         });
 }
 
@@ -213,11 +205,9 @@ module.exports.change_password = function (req, res) {
     // Call service
     UserService.ChangePassword(uId, password_old, password_new)
         .then(result => {
-            console.log(result);
             return res.status(200).json(result);
         })
         .catch(err => {
-            console.log(err);
             return res.status(500).json(err);
         })
 }

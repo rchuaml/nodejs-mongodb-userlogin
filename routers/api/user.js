@@ -37,8 +37,5 @@ router.get('/test', (req, res) => {
     });
 });
 
-// TODO: clear the code segment when release
-router.get('/image/:uId', userController.get_profile_img);
-
 // Exports router
 module.exports = router;

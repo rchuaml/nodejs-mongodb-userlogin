@@ -11,6 +11,13 @@ NodeJS REST API
 # Architecture
 MVC
 
+# Route
+1. Sign up		->	./api/user/register 	(POST)
+2. Sign in		->	./api/user/login 		(GET)
+3. Modify profile		->	./api/user/profile 		(GET & PUT)
+4. Change password	->	./api/user/security	(PUT)
+5. Check JWT				->	./api/user/auth		 	(GET)
+
 # Packages
 1. express-> NodeJS web framework
 2. dotenv-> read the .env file and set to process.env
