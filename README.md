@@ -1,5 +1,5 @@
 # Description
-NodeJS REST API
+NodeJS REST API for user login
 
 # Installation
 1. download repo-> git clone https://github.com/57chi/nodejs-mongodb-userlogin.git
@@ -8,9 +8,6 @@ NodeJS REST API
 4. install dependencies-> npm install
 5. run-> npm start (or node app.js)
 
-# Architecture
-MVC
-
 # Route
 1. Sign up		->	./api/user/register 	(POST)
 2. Sign in		->	./api/user/login 		(GET)
@@ -18,7 +15,7 @@ MVC
 4. Change password	->	./api/user/security	(PUT)
 5. Check JWT				->	./api/user/auth		 	(GET)
 
-# Packages
+# Node Packages Quick View
 1. express-> NodeJS web framework
 2. dotenv-> read the .env file and set to process.env
 3. body-parser-> parse to json format and access by req.body
@@ -29,8 +26,5 @@ MVC
 8. multer-> middleware for handling multipart/form-data
 9. nodemon-> restart app automatically
 
-# AWS Elastic Beanstalk Deployment
-refer to https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/GettingStarted.html?icmpid=docs_elasticbeanstalk_console
-
-# Result
-http://testnodeapp-env.itmejkqfz2.us-east-1.elasticbeanstalk.com/api/user/test
+# Reference of AWS Elastic Beanstalk Deployment
+https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/GettingStarted.html?icmpid=docs_elasticbeanstalk_console
